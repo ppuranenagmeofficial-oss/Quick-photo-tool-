@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QuickPhoto Tools - Free Image Tools</title>
+<meta name="description" content="Free online photo compressor, image resizer, signature resizer and JPG PNG converter.">
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f4f6f8;color:#222}
+header{background:#111827;color:#fff;padding:22px 15px;text-align:center}
+header h1{margin:0;font-size:28px}
+header p{margin:8px 0 0;color:#d1d5db}
+.container{max-width:900px;margin:25px auto;padding:0 15px}
+.tools{display:grid;grid-template-columns:repeat(2,1fr);gap:15px}
+.tool{background:#fff;padding:20px;border-radius:14px;box-shadow:0 3px 12px rgba(0,0,0,.08)}
+.tool h2{font-size:19px;margin-top:0}
+input,select,button{width:100%;padding:12px;margin-top:10px;border-radius:8px;border:1px solid #ccc;font-size:15px}
+button{background:#2563eb;color:#fff;border:0;cursor:pointer;font-weight:bold}
+button:hover{background:#1d4ed8}
+.preview{max-width:100%;max-height:250px;margin-top:15px;display:none;border-radius:8px}
+.result{margin-top:15px;font-size:14px}
+.download{display:none;background:#16a34a;text-decoration:none;color:#fff;padding:12px;border-radius:8px;margin-top:10px;text-align:center;font-weight:bold}
+footer{text-align:center;padding:30px 15px;color:#666}
+@media(max-width:650px){.tools{grid-template-columns:1fr}header h1{font-size:24px}}
+</style>
+</head>
+<body>
+<header><h1>📸 QuickPhoto Tools</h1><p>Free Online Photo & Image Tools</p></header>
+<div class="container">
+<div class="tools">
+<div class="tool">
+<h2>📸 Photo Compressor</h2><p>Compress your photo to a target KB size.</p>
+<input type="file" id="compressFile" accept="image/*">
+<input type="number" id="targetKB" value="50" min="5" placeholder="Target KB">
+<button onclick="compressImage()">Compress Photo</button>
+<img id="compressPreview" class="preview">
+<div id="compressResult" class="result"></div>
+<a id="compressDownload" class="download" download="compressed-photo.jpg">⬇ Download Photo</a>
+</div>
+<div class="tool">
+<h2>📏 Image Resizer</h2><p>Resize your image to any dimensions.</p>
+<input type="file" id="resizeFile" accept="image/*">
+<input type="number" id="resizeWidth" placeholder="Width (px)">
+<input type="number" id="resizeHeight" placeholder="Height (px)">
+<button onclick="resizeImage()">Resize Image</button>
+<div id="resizeResult" class="result"></div>
+<a id="resizeDownload" class="download" download="resized-image.jpg">⬇ Download Image</a>
+</div>
+<div class="tool">
+<h2>✍️ Signature Resizer</h2><p>Resize your signature for online forms.</p>
+<input type="file" id="signatureFile" accept="image/*">
+<input type="number" id="signatureWidth" value="300" placeholder="Width">
+<input type="number" id="signatureHeight" value="100" placeholder="Height">
+<button onclick="resizeSignature()">Resize Signature</button>
+<div id="signatureResult" class="result"></div>
+<a id="signatureDownload" class="download" download="signature.jpg">⬇ Download Signature</a>
+</div>
+<div class="tool">
+<h2>🔄 JPG ↔ PNG Converter</h2><p>Convert your image format instantly.</p>
+<input type="file" id="convertFile" accept="image/*">
+<select id="convertFormat"><option value="image/jpeg">Convert to JPG</option><option value="image/png">Convert to PNG</option></select>
+<button onclick="convertImage()">Convert Image</button>
+<div id="convertResult" class="result"></div>
+<a id="convertDownload" class="download" download="converted-image">⬇ Download Converted Image</a>
+</div>
+</div>
+</div>
+<footer><p>© 2026 QuickPhoto Tools</p><p>Free online image tools. Your photos are processed in your browser.</p></footer>
+<script>
+function compressImage(){
+ const file=document.getElementById("compressFile").files[0];
+ if(!file){alert("Please select a photo.");return}
+ const targetKB=Number(document.getElementById("targetKB").value);
+ const img=new Image();
+ img.onload=function(){
+  const canvas=document.createElement("canvas");canvas.width=img.width;canvas.height=img.height;
+  const ctx=canvas.getContext("2d");ctx.drawImage(img,0,0);
+  let min=.05,max=1,bestBlob=null;
+  function search(){
+   const quality=(min+max)/2;
+   canvas.toBlob(function(blob){
+    if(!blob)return;
+    const sizeKB=blob.size/1024;
+    if(sizeKB<=targetKB&&(!bestBlob||blob.size>bestBlob.size))bestBlob=blob;
+    if(max-min<.01){
+     if(!bestBlob)bestBlob=blob;
+     const url=URL.createObjectURL(bestBlob);
+     document.getElementById("compressPreview").src=url;
+     document.getElementById("compressPreview").style.display="block";
+     document.getElementById("compressResult").textContent="Final size: "+(bestBlob.size/1024).toFixed(1)+" KB";
+     const link=document.getElementById("compressDownload");link.href=url;link.style.display="block";return;
+    }
+    if(sizeKB>targetKB)max=quality;else min=quality;
+    search();
+   },"image/jpeg",quality);
+  }
+  search();
+ };
+ img.src=URL.createObjectURL(file);
+}
+function processResize(file,width,height,downloadID,resultID,filename){
+ const img=new Image();
+ img.onload=function(){
+  const canvas=document.createElement("canvas");canvas.width=width;canvas.height=height;
+  canvas.getContext("2d").drawImage(img,0,0,width,height);
+  canvas.toBlob(function(blob){
+   const url=URL.createObjectURL(blob),link=document.getElementById(downloadID);
+   link.href=url;link.download=filename;link.style.display="block";
+   document.getElementById(resultID).textContent="Done! Size: "+(blob.size/1024).toFixed(1)+" KB";
+  },"image/jpeg",.9);
+ };
+ img.src=URL.createObjectURL(file);
+}
+function resizeImage(){
+ const file=document.getElementById("resizeFile").files[0];
+ const width=Number(document.getElementById("resizeWidth").value),height=Number(document.getElementById("resizeHeight").value);
+ if(!file||!width||!height){alert("Select image and enter width and height.");return}
+ processResize(file,width,height,"resizeDownload","resizeResult","resized-image.jpg");
+}
+function resizeSignature(){
+ const file=document.getElementById("signatureFile").files[0];
+ const width=Number(document.getElementById("signatureWidth").value),height=Number(document.getElementById("signatureHeight").value);
+ if(!file){alert("Please select signature.");return}
+ processResize(file,width,height,"signatureDownload","signatureResult","signature.jpg");
+}
+function convertImage(){
+ const file=document.getElementById("convertFile").files[0],format=document.getElementById("convertFormat").value;
+ if(!file){alert("Please select an image.");return}
+ const img=new Image();
+ img.onload=function(){
+  const canvas=document.createElement("canvas");canvas.width=img.width;canvas.height=img.height;
+  canvas.getContext("2d").drawImage(img,0,0);
+  canvas.toBlob(function(blob){
+   const url=URL.createObjectURL(blob),link=document.getElementById("convertDownload");
+   link.href=url;link.download=format==="image/png"?"converted-image.png":"converted-image.jpg";link.style.display="block";
+   document.getElementById("convertResult").textContent="Conversion complete! "+(blob.size/1024).toFixed(1)+" KB";
+  },format,.9);
+ };
+ img.src=URL.createObjectURL(file);
+}
+</script>
+</body>
+</html>
